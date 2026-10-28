@@ -64,14 +64,18 @@ type1_comp_plan = st.checkbox(
     help="Type I Action under 6 NYCRR 617.4(b)(1)."
 )
 
-type1_zoning_25acres = st.checkbox(
-    "Adoption of changes in allowable uses within a zoning district affecting 25 or more acres",
-    help="Type I Action under 6 NYCRR 617.4(b)(2)."
+zoning_change_acres = st.number_input(
+    "Zoning district change / allowable use changes (affected area in acres)",
+    min_value=0.0,
+    step=1.0,
+    help="Triggers Type I classification if changes in allowable uses within a zoning district affect 25 or more acres (6 NYCRR 617.4(b)(2))."
 )
 
-type1_land_transfer_100acres = st.checkbox(
-    "Acquisition, sale, lease, annexation, or transfer of 100 or more contiguous acres by a public agency",
-    help="Type I Action under 6 NYCRR 617.4(b)(4)."
+land_transfer_acres = st.number_input(
+    "Public agency land acquisition, sale, lease, annexation, or transfer (in contiguous acres)",
+    min_value=0.0,
+    step=5.0,
+    help="Triggers Type I classification if the transfer involves 100 or more contiguous acres of land by a State or local agency (6 NYCRR 617.4(b)(4))."
 )
 
 st.subheader("3. Specific Type II Statutory Exemption Categories")
@@ -138,18 +142,18 @@ if st.button("Run SEQRA Evaluation", type="primary"):
     is_type_ii = False
     reasons = []
 
-    # 1. Policy & Agency Type I Triggers (6 NYCRR 617.4(b)(1), (2), (4))
+    # 1. Policy & Agency Type I Triggers (6 NYCRR 617.4(b))
     if type1_comp_plan:
         is_type_i = True
         reasons.append("Adoption of a municipal land use plan, comprehensive management plan, or initial zoning code is a Type I action under 617.4(b)(1).")
 
-    if type1_zoning_25acres:
+    if zoning_change_acres >= 25.0:
         is_type_i = True
-        reasons.append("Zoning map or text amendment altering allowable uses across 25+ acres is a Type I action under 617.4(b)(2).")
+        reasons.append(f"Zoning map or text amendment affecting allowable uses across {zoning_change_acres} acres meets or exceeds the Type I threshold of 25 acres under 617.4(b)(2).")
 
-    if type1_land_transfer_100acres:
+    if land_transfer_acres >= 100.0:
         is_type_i = True
-        reasons.append("Public agency land transfer/annexation involving 100+ contiguous acres is a Type I action under 617.4(b)(4).")
+        reasons.append(f"Public agency land transfer/annexation involving {land_transfer_acres} contiguous acres meets or exceeds the Type I threshold of 100 acres under 617.4(b)(4).")
 
     # 2. Residential Threshold Checks (6 NYCRR 617.4(b)(5))
     if unsewered_water_sewer and num_residential_units >= 50:
@@ -176,9 +180,37 @@ if st.button("Run SEQRA Evaluation", type="primary"):
         is_type_i = True
         reasons.append(f"Non-residential gross floor area ({non_res_sqft:,} sq. ft.) meets or exceeds the Type I threshold of 100,000 sq. ft. for municipalities under 150,000 population.")
 
-    # 4. Requested Zoning Changes Triggering Type I (6 NYCRR 617.4(b)(3))
-    if involves_zoning_conflict and is_type_i:
-        reasons.append("Applicant-requested zoning change associated with an action exceeding Type I thresholds (617.4(b)(3)).")
+    # 4. 25% Threshold Rules for Overlays (6 NYCRR 617.4(b)(8), (9), (10))
+    # Triggers Type I if an action meets >= 25% of ANY major Type I threshold while occurring in/near an overlay:
+    # - Disturbance >= 2.5 acres (25% of 10 acres)
+    # - Non-residential floor area >= 25,000 sq ft (25% of 100k sq ft)
+    # - Parking >= 125 spaces (25% of 500 vehicles)
+    # - Residential units >= 50 units (25% of 200 units)
+    
+    overlay_25_pct_triggered = False
+    overlay_reasons = []
+
+    is_exceeding_25_pct = (
+        disturbance_acres >= 2.5 or
+        non_res_sqft >= 25000 or
+        parking_spaces >= 125 or
+        num_residential_units >= 50
+    )
+
+    if is_exceeding_25_pct:
+        if involves_ag:
+            overlay_25_pct_triggered = True
+            overlay_reasons.append("Project is within an enrolled agricultural district (non-ag use) and meets or exceeds 25% of a Type I threshold (617.4(b)(8)).")
+        if involves_historic:
+            overlay_25_pct_triggered = True
+            overlay_reasons.append("Project is within/adjacent to a historic site/district and meets or exceeds 25% of a Type I threshold (617.4(b)(9)).")
+        if involves_parkland:
+            overlay_25_pct_triggered = True
+            overlay_reasons.append("Project is within/adjacent to public parkland and meets or exceeds 25% of a Type I threshold (617.4(b)(10)).")
+
+    if overlay_25_pct_triggered:
+        is_type_i = True
+        reasons.extend(overlay_reasons)
 
     # 5. Mixed-Use Guardrail
     mixed_use_triggered = non_res_sqft >= 4000
@@ -186,27 +218,10 @@ if st.button("Run SEQRA Evaluation", type="primary"):
     if mixed_use_triggered and not type2_ag_structure:
         reasons.append(f"Non-residential gross floor area ({non_res_sqft:,} sq. ft.) meets or exceeds the 4,000 sq. ft. mixed-use guardrail, disqualifying pure residential/accessory Type II exemptions.")
 
-    # 6. Overlay / 25% Threshold Checks (Items 8, 9, 10)
-    has_overlay_trigger = False
-    if involves_ag and disturbance_acres >= 2.5:
-        has_overlay_trigger = True
-        is_type_i = True
-        reasons.append("Project has non-agricultural use within an enrolled agricultural district and exceeds 25% of the 10-acre physical disturbance threshold (2.5+ acres), triggering Type I classification under 617.4(b)(8).")
-
-    if involves_historic and disturbance_acres >= 2.5:
-        has_overlay_trigger = True
-        is_type_i = True
-        reasons.append("Project is adjacent to a historic resource and exceeds 25% of the 10-acre physical disturbance threshold (2.5+ acres), triggering Type I classification under 617.4(b)(9).")
-
-    if involves_parkland and disturbance_acres >= 2.5:
-        has_overlay_trigger = True
-        is_type_i = True
-        reasons.append("Project is adjacent to public parkland and exceeds 25% of the 10-acre physical disturbance threshold (2.5+ acres), triggering Type I classification under 617.4(b)(10).")
-
-    # 7. Type II Exemption Evaluation
+    # 6. Type II Exemption Evaluation
     type2_checked = any([type2_maint, type2_1to3_family, type2_variances, type2_ag_structure]) or (0 < non_res_sqft < 4000)
 
-    if type2_checked and not is_type_i and not involves_zoning_conflict and not has_overlay_trigger:
+    if type2_checked and not is_type_i and not involves_zoning_conflict:
         if mixed_use_triggered and not type2_ag_structure:
             is_type_ii = False  # Blocked by mixed-use guardrail
         else:
@@ -226,7 +241,7 @@ if st.button("Run SEQRA Evaluation", type="primary"):
     if is_type_i:
         classification = "Type I Action (Full EAF Required)"
         status_color = "error"
-        explanation = "The project triggers one or more Type I thresholds under 6 NYCRR 617.4 (including major project scale, agency policy actions, or 25% overlay rules). Statutory precedence dictates that Type I classifications override potential Type II exemptions. Type I actions require the submission of a Full Environmental Assessment Form (Full EAF)."
+        explanation = "The project triggers one or more Type I thresholds under 6 NYCRR 617.4 (including major project scale, agency policy acreage thresholds, or the 25% overlay rules). Statutory precedence dictates that Type I classifications override potential Type II exemptions. Type I actions require the submission of a Full Environmental Assessment Form (Full EAF)."
     elif is_type_ii:
         classification = "Type II Action (Exempt from Review)"
         status_color = "success"

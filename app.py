@@ -37,7 +37,10 @@ involves_historic = st.checkbox(
     "Contagious or adjacent to a historic site or district",
     help="Includes properties listed on or eligible for the State or National Register of Historic Places, or located within a designated local, state, or federal historic district."
 )
-involves_ag = st.checkbox("Parcel is enrolled in the NYS Agricultural District Program")
+involves_ag = st.checkbox(
+    "Parcel is enrolled in the NYS Agricultural District Program",
+    help="Indicates whether the tax parcel is located within a state-certified agricultural district established pursuant to Article 25-AA of the NYS Agriculture and Markets Law."
+)
 involves_parkland = st.checkbox("Contagious to public parkland or recreation area")
 
 involves_zoning_conflict = st.checkbox(

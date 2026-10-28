@@ -30,28 +30,12 @@ non_res_sqft = st.number_input(
     help="This means the total square footage of new construction or building expansion for either a primary building or any accessory/appurtenant structures (such as storage barns, detached garages, or outbuildings)."
 )
 
-num_residential_units = st.number_input(
-    "Number of residential units",
-    min_value=0,
-    step=1,
-    help="Total number of new dwelling units proposed (e.g., single-family homes, apartments, or townhome units)."
-)
-
 st.subheader("2. Project Characteristics & Overlays")
 st.caption("💡 *Note: Check the box for any statement that applies to your project (Checked = Yes).*")
 
-involves_historic = st.checkbox(
-    "Contagious or adjacent to a historic site or district",
-    help="Includes properties listed on or eligible for the State or National Register of Historic Places, or located within a designated local, state, or federal historic district."
-)
-involves_ag = st.checkbox(
-    "Parcel is enrolled in the NYS Agricultural District Program",
-    help="Indicates whether the tax parcel is located within a state-certified agricultural district established pursuant to Article 25-AA of the NYS Agriculture and Markets Law."
-)
-involves_parkland = st.checkbox(
-    "Contagious to public parkland or recreation area",
-    help="Includes properties that share a common boundary with or are directly adjacent to publicly owned parkland, forest preserves, or active recreation facilities."
-)
+involves_historic = st.checkbox("Contagious or adjacent to a historic site or district")
+involves_ag = st.checkbox("Parcel is enrolled in the NYS Agricultural District Program")
+involves_parkland = st.checkbox("Contagious to public parkland or recreation area")
 
 involves_zoning_conflict = st.checkbox(
     "Involves a change in zoning, a use variance, or inconsistency with local land use controls"
@@ -72,69 +56,38 @@ st.divider()
 st.subheader("3. Environmental Review Determination")
 
 if st.button("Run SEQRA Evaluation", type="primary"):
-    # Evaluation Engine with Statutory Precedence, Mixed-Use Guardrails & Type II Exemption Rules
+    # Evaluation Engine with Statutory Precedence & Mixed-Use Guardrails
     is_type_i = False
-    is_type_ii = False
     reasons = []
 
-    # 1. Type I Threshold Checks (6 NYCRR 617.4)
+    # Type I Threshold Check (e.g., Disturbance >= 10 acres)
     if disturbance_acres >= 10.0:
         is_type_i = True
         reasons.append(f"Physical disturbance ({disturbance_acres} acres) meets or exceeds the Type I threshold of 10 acres.")
 
-    if non_res_sqft >= 100000:
-        is_type_i = True
-        reasons.append(f"Non-residential gross floor area ({non_res_sqft} sq. ft.) meets or exceeds the Type I threshold of 100,000 sq. ft.")
-
-    # 2. Mixed-Use Guardrail: Non-residential footprint >= 4,000 sq ft blocks residential-only Type II exemptions
+    # Mixed-Use Guardrail: Non-residential footprint >= 4,000 sq ft blocks residential-only Type II exemptions
     mixed_use_triggered = non_res_sqft >= 4000
 
     if mixed_use_triggered:
         reasons.append(f"Non-residential gross floor area ({non_res_sqft} sq. ft.) meets or exceeds the 4,000 sq. ft. mixed-use guardrail, disqualifying pure residential Type II exemptions.")
 
-    # 3. Overlay / 25% Threshold Checks (Ag District, Historic, Parkland)
-    # If unlisted action takes place in/near an overlay and affects >= threshold amounts
-    has_overlay_trigger = False
-    if involves_ag and disturbance_acres >= 2.5:
-        has_overlay_trigger = True
-        reasons.append("Project is within an enrolled agricultural district and exceeds the 2.5-acre overlay review threshold.")
-    if involves_historic and disturbance_acres >= 1.0:
-        has_overlay_trigger = True
-        reasons.append("Project is adjacent to a historic resource and exceeds the 1-acre overlay review threshold.")
-    if involves_parkland and disturbance_acres >= 1.0:
-        has_overlay_trigger = True
-        reasons.append("Project is adjacent to public parkland and exceeds the 1-acre overlay review threshold.")
-
-    # 4. Type II Potential Check (e.g., 1-3 single family homes not in an overlay, low disturbance)
-    # Type II actions are exempt from further review under SEQRA (6 NYCRR 617.5)
-    if not is_type_i and not mixed_use_triggered and not has_overlay_trigger and not involves_zoning_conflict:
-        if num_residential_units > 0 and num_residential_units <= 3 and disturbance_acres < 1.0:
-            is_type_ii = True
-            reasons.append(f"Construction of {num_residential_units} residential unit(s) with minimal disturbance qualifies as a Type II exempt action.")
-
-    # Determine Classification with Statutory Precedence (Type I overrides Type II)
+    # Determine Classification with Precedence (Type I overrides Type II)
     if is_type_i:
         classification = "Type I Action (Full EAF Required)"
         status_color = "error"
         explanation = "The project triggers one or more Type I thresholds under 6 NYCRR 617.4. Statutory precedence dictates that Type I classifications override potential Type II exemptions. Type I actions require the submission of a Full Environmental Assessment Form (Full EAF)."
-    elif is_type_ii:
-        classification = "Type II Action (Exempt from Review)"
-        status_color = "success"
-        explanation = "The project falls under statutory Type II exemption categories (6 NYCRR 617.5) with no significant adverse environmental impacts anticipated. No further review under SEQRA is required."
-    elif mixed_use_triggered:
+    elif mixed_use_triggered and not is_type_i:
         classification = "Unlisted Action (Subject to Mixed-Use Guardrail)"
         status_color = "warning"
-        explanation = "Due to the non-residential square footage exceeding statutory thresholds, standard residential exemptions do not apply. Prepare either a Short EAF or Full EAF for lead agency review."
+        explanation = "Due to the non-residential square footage exceeding statutory thresholds, standard residential exemptions do not apply. Depending on project scale, prepare either a Short EAF or Full EAF for lead agency review."
     else:
-        classification = "Unlisted Action"
+        classification = "Unlisted / Potential Type II Review"
         status_color = "info"
-        explanation = "Preliminary screening completed. Review individual overlay thresholds and local planning board guidelines. Complete the Short Environmental Assessment Form (Short EAF)."
+        explanation = "Preliminary screening completed. Review individual overlay thresholds and local planning board guidelines. For unlisted actions, complete the Short Environmental Assessment Form (Short EAF)."
 
     # Display Results
     if status_color == "error":
         st.error(f"### Classification: {classification}")
-    elif status_color == "success":
-        st.success(f"### Classification: {classification}")
     elif status_color == "warning":
         st.warning(f"### Classification: {classification}")
     else:

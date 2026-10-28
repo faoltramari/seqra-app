@@ -41,7 +41,10 @@ involves_ag = st.checkbox(
     "Parcel is enrolled in the NYS Agricultural District Program",
     help="Indicates whether the tax parcel is located within a state-certified agricultural district established pursuant to Article 25-AA of the NYS Agriculture and Markets Law."
 )
-involves_parkland = st.checkbox("Contagious to public parkland or recreation area")
+involves_parkland = st.checkbox(
+    "Contagious to public parkland or recreation area",
+    help="Includes properties that share a common boundary with or are directly adjacent to publicly owned parkland, forest preserves, or active recreation facilities."
+)
 
 involves_zoning_conflict = st.checkbox(
     "Involves a change in zoning, a use variance, or inconsistency with local land use controls"
@@ -66,10 +69,23 @@ if st.button("Run SEQRA Evaluation", type="primary"):
     is_type_i = False
     reasons = []
 
-    # Type I Threshold Check (e.g., Disturbance >= 10 acres)
+    # Type I Threshold Checks (6 NYCRR 617.4)
     if disturbance_acres >= 10.0:
         is_type_i = True
         reasons.append(f"Physical disturbance ({disturbance_acres} acres) meets or exceeds the Type I threshold of 10 acres.")
+
+    if non_res_sqft >= 100000:
+        is_type_i = True
+        reasons.append(f"Non-residential gross floor area ({non_res_sqft} sq. ft.) meets or exceeds the Type I threshold of 100,000 sq. ft.")
+
+    # 25% Threshold Rule for Overlays (Ag District, Historic, Parkland)
+    # If unlisted action takes place in/near an overlay and affects >= 25% of any municipal threshold
+    if involves_ag and disturbance_acres >= 2.5:
+        reasons.append("Project is within an enrolled agricultural district and exceeds the 2.5-acre overlay review threshold.")
+    if involves_historic and disturbance_acres >= 1.0:
+        reasons.append("Project is adjacent to a historic resource and exceeds the 1-acre overlay review threshold.")
+    if involves_parkland and disturbance_acres >= 1.0:
+        reasons.append("Project is adjacent to public parkland and exceeds the 1-acre overlay review threshold.")
 
     # Mixed-Use Guardrail: Non-residential footprint >= 4,000 sq ft blocks residential-only Type II exemptions
     mixed_use_triggered = non_res_sqft >= 4000
@@ -77,7 +93,7 @@ if st.button("Run SEQRA Evaluation", type="primary"):
     if mixed_use_triggered:
         reasons.append(f"Non-residential gross floor area ({non_res_sqft} sq. ft.) meets or exceeds the 4,000 sq. ft. mixed-use guardrail, disqualifying pure residential Type II exemptions.")
 
-    # Determine Classification with Precedence (Type I overrides Type II)
+    # Determine Classification with Precedence (Type I overrides Type II / Unlisted)
     if is_type_i:
         classification = "Type I Action (Full EAF Required)"
         status_color = "error"

@@ -91,21 +91,6 @@ type2_ag_ops = st.checkbox(
     help="Standard agricultural farm management practices, farm structures, silos, and barns on a farm operation."
 )
 
-type2_infrastructure = st.checkbox(
-    "Highway repaving (no new lanes), utility line repairs/openings, or trenchless/aerial telecom cables in existing rights-of-way",
-    help="Repaving existing roads without new lanes, utility opening repairs, or utility right-of-way cable placement."
-)
-
-type2_minor_nonres = st.checkbox(
-    "Construction or expansion of a primary or accessory non-residential structure under 4,000 sq. ft.",
-    help="Primary or accessory non-residential structures involving less than 4,000 sq. ft. of gross floor area."
-)
-
-type2_edu_routine = st.checkbox(
-    "Routine activities of educational institutions or facility expansions under 10,000 sq. ft.",
-    help="Routine school activities or minor expansions under 10,000 sq. ft. (excluding closures with use changes)."
-)
-
 type2_1to3_family = st.checkbox(
     "Construction of 1, 2, or 3-family residential structures, minor accessory structures, or utility connections",
     help="Single, double, or triple-family homes, garages, decks, pools, fences, or utility extensions on approved lots."
@@ -121,14 +106,19 @@ type2_solar_roof = st.checkbox(
     help="Rooftop solar arrays on structures not listed or eligible for historic registers."
 )
 
-type2_variances_reuse = st.checkbox(
-    "Granting of setback/area variances for 1-3 family homes, or permitted reuse of existing residential/commercial structures",
-    help="Individual setback, lot line, or residential area variances, or reuse of compliant residential/commercial structures."
+type2_setback_adjustments = st.checkbox(
+    "Granting of setback and lot line variances and adjustments",
+    help="Setback and boundary adjustments that do not alter allowed site density or use."
 )
 
-type2_planning_admin = st.checkbox(
-    "Routine agency administration, planning referrals (GML 239-m/n), ministerial permits, or silviculture under 10 acres",
-    help="County GML 239-m/n reviews, minor forestry, ministerial building permits, enforcement, and routine administration."
+type2_res_area_variance = st.checkbox(
+    "Granting of an area variance for a single-family, two-family, or three-family residence",
+    help="Dimensional area variance approvals for 1-to-3 family residential structures."
+)
+
+type2_structure_reuse = st.checkbox(
+    "Reuse of a residential, commercial, or mixed-use structure where the use is permitted (including by special use permit)",
+    help="Reusing an existing structure for a permitted residential or commercial use without exceeding Type I thresholds."
 )
 
 st.subheader("4. Project Characteristics & Environmental Overlays")
@@ -244,9 +234,8 @@ if st.button("Run SEQRA Evaluation", type="primary"):
 
     # 6. Comprehensive Type II Exemption Evaluation
     type2_checked = any([
-        type2_maint_repair, type2_ag_ops, type2_infrastructure, type2_minor_nonres,
-        type2_edu_routine, type2_1to3_family, type2_solar_disturbed, type2_solar_roof,
-        type2_variances_reuse, type2_planning_admin
+        type2_maint_repair, type2_ag_ops, type2_1to3_family, type2_solar_disturbed,
+        type2_solar_roof, type2_setback_adjustments, type2_res_area_variance, type2_structure_reuse
     ]) or (0 < non_res_sqft < 4000)
 
     if type2_checked and not is_type_i and not involves_zoning_conflict:
@@ -258,22 +247,20 @@ if st.button("Run SEQRA Evaluation", type="primary"):
                 reasons.append("Qualifies under Type II: Maintenance, in-kind replacement, or code/green infrastructure upgrades.")
             if type2_ag_ops or (0 < non_res_sqft < 4000 and type2_ag_ops):
                 reasons.append("Qualifies under Type II: Agricultural farm management practices and structures.")
-            if type2_infrastructure:
-                reasons.append("Qualifies under Type II: Routine utility, highway, or telecommunication infrastructure maintenance.")
-            if type2_minor_nonres or (0 < non_res_sqft < 4000):
+            if 0 < non_res_sqft < 4000:
                 reasons.append(f"Qualifies under Type II: Non-residential structure/expansion ({non_res_sqft:,} sq. ft.) is under 4,000 sq. ft.")
-            if type2_edu_routine:
-                reasons.append("Qualifies under Type II: Routine educational institution activity or minor expansion under 10,000 sq. ft.")
             if type2_1to3_family:
                 reasons.append("Qualifies under Type II: Residential construction of 1-3 units, accessory structures, or utility extensions.")
             if type2_solar_disturbed:
                 reasons.append("Qualifies under Type II: Solar energy array (<= 25 acres) on a qualified disturbed/brownfield/industrial site.")
             if type2_solar_roof:
                 reasons.append("Qualifies under Type II: Rooftop solar energy installation on a non-historic structure.")
-            if type2_variances_reuse:
-                reasons.append("Qualifies under Type II: Area/setback variances or compliant building/structure reuses.")
-            if type2_planning_admin:
-                reasons.append("Qualifies under Type II: General planning, GML 239 referrals, ministerial permits, or routine agency administration.")
+            if type2_setback_adjustments:
+                reasons.append("Qualifies under Type II (6 NYCRR 617.5(c)(16)): Granting of setback and lot line variances and adjustments.")
+            if type2_res_area_variance:
+                reasons.append("Qualifies under Type II (6 NYCRR 617.5(c)(17)): Granting of an area variance for a 1-to-3 family residence.")
+            if type2_structure_reuse:
+                reasons.append("Qualifies under Type II (6 NYCRR 617.5(c)(18)): Permitted reuse of a residential, commercial, or mixed-use structure.")
 
     # Determine Classification with Statutory Precedence (Type I > Type II > Unlisted)
     if is_type_i:

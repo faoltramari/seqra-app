@@ -33,7 +33,10 @@ non_res_sqft = st.number_input(
 st.subheader("2. Project Characteristics & Overlays")
 st.caption("💡 *Note: Check the box for any statement that applies to your project (Checked = Yes).*")
 
-involves_historic = st.checkbox("Contagious or adjacent to a historic site or district")
+involves_historic = st.checkbox(
+    "Contagious or adjacent to a historic site or district",
+    help="Includes properties listed on or eligible for the State or National Register of Historic Places, or located within a designated local, state, or federal historic district."
+)
 involves_ag = st.checkbox("Parcel is enrolled in the NYS Agricultural District Program")
 involves_parkland = st.checkbox("Contagious to public parkland or recreation area")
 

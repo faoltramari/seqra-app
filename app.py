@@ -27,14 +27,14 @@ non_res_sqft = st.number_input(
     "Non-residential gross floor area (sq. ft.)",
     min_value=0,
     step=100,
-    help="This means the total square footage of new construction or building expansion for either a primary building or any accessory/appurtenant structures (such as storage barns, detached garages, or outbuildings)."
+    help="Total square footage of new construction or building expansion for non-residential primary or accessory structures."
 )
 
 num_residential_units = st.number_input(
     "Number of residential units proposed",
     min_value=0,
     step=1,
-    help="Total number of new dwelling units proposed (e.g., single-family homes, apartments, or townhome units)."
+    help="Total number of new dwelling units proposed."
 )
 
 unsewered_water_sewer = st.checkbox(
@@ -78,27 +78,57 @@ land_transfer_acres = st.number_input(
     help="Triggers Type I classification if the transfer involves 100 or more contiguous acres of land by a State or local agency (6 NYCRR 617.4(b)(4))."
 )
 
-st.subheader("3. Specific Type II Statutory Exemption Categories")
-st.caption("💡 *Note: Check any box that explicitly describes your proposed action under 6 NYCRR 617.5(c).*")
+st.subheader("3. Comprehensive Type II Statutory Exemption Categories (6 NYCRR 617.5(c))")
+st.caption("💡 *Note: Check any category below that explicitly describes your proposed action.*")
 
-type2_maint = st.checkbox(
-    "Maintenance, repair, or routine replacement of existing structures/facilities in-kind",
-    help="Includes replacing roof, repaving existing parking lots without expansion, or utility line repairs."
+type2_maint_repair = st.checkbox(
+    "(c)(1)-(2) Maintenance, in-kind replacement, rehabilitation, reconstruction, code upgrades, or green infrastructure retrofits",
+    help="Routine maintenance, in-kind reconstruction, or energy/fire code upgrades without exceeding Type I thresholds."
+)
+
+type2_ag_ops = st.checkbox(
+    "(c)(3) Agricultural farm management practices, farm buildings, structures, and allowable land use changes",
+    help="Standard agricultural farm management practices, farm structures, silos, and barns on a farm operation."
+)
+
+type2_infrastructure = st.checkbox(
+    "(c)(4)-(7) Highway repaving, utility maintenance/openings, trenchless/aerial telecom cables",
+    help="Repaving existing roads without new lanes, utility opening repairs, or utility right-of-way cable placement."
+)
+
+type2_minor_nonres = st.checkbox(
+    "(c)(9) Non-residential construction/expansion under 4,000 sq. ft. consistent with zoning/land use controls",
+    help="Primary or accessory non-residential structures involving less than 4,000 sq. ft. of gross floor area."
+)
+
+type2_edu_routine = st.checkbox(
+    "(c)(10) Routine educational institution activities or facility expansions under 10,000 sq. ft.",
+    help="Routine school activities or minor expansions under 10,000 sq. ft. (excluding closures with use changes)."
 )
 
 type2_1to3_family = st.checkbox(
-    "Construction of 1, 2, or 3-family residential structure(s) on an approved lot",
-    help="Standard single-family, duplex, or triplex residential construction."
+    "(c)(11)-(12) Construction of 1, 2, or 3-family residences, minor accessory structures, & utility extensions",
+    help="Single, double, or triple-family homes, garages, decks, pools, fences, or utility extensions on approved lots."
 )
 
-type2_variances = st.checkbox(
-    "Granting of an area variance or setback variance for a single-family or two-family residence",
-    help="Dimensional variance requests that do not change the underlying permitted land use."
+type2_solar_disturbed = st.checkbox(
+    "(c)(14) Solar energy arrays (<= 25 acres) on closed landfills, brownfields, WWTPs, industrial sites, or parking lots",
+    help="Solar installations up to 25 acres of physical alteration on designated disturbed or brownfield locations."
 )
 
-type2_ag_structure = st.checkbox(
-    "Agricultural farm structures and management practices on a farm operation",
-    help="Includes barns, silos, manure storage facilities, and standard agricultural practices."
+type2_solar_roof = st.checkbox(
+    "(c)(15) Solar energy arrays on an existing structure (outside historic registers/districts)",
+    help="Rooftop solar arrays on structures not listed or eligible for historic registers."
+)
+
+type2_variances_reuse = st.checkbox(
+    "(c)(16)-(18) Setback/area variances for 1-3 family homes or permitted building reuses",
+    help="Individual setback, lot line, or residential area variances, or reuse of compliant residential/commercial structures."
+)
+
+type2_planning_admin = st.checkbox(
+    "(c)(19)-(43) General planning, GML 239 referrals, silviculture (<10 acres), ministerial permits, admin & enforcement",
+    help="County GML 239-m/n reviews, minor forestry, ministerial building permits, enforcement, and routine administration."
 )
 
 st.subheader("4. Project Characteristics & Environmental Overlays")
@@ -181,12 +211,6 @@ if st.button("Run SEQRA Evaluation", type="primary"):
         reasons.append(f"Non-residential gross floor area ({non_res_sqft:,} sq. ft.) meets or exceeds the Type I threshold of 100,000 sq. ft. for municipalities under 150,000 population.")
 
     # 4. 25% Threshold Rules for Overlays (6 NYCRR 617.4(b)(8), (9), (10))
-    # Triggers Type I if an action meets >= 25% of ANY major Type I threshold while occurring in/near an overlay:
-    # - Disturbance >= 2.5 acres (25% of 10 acres)
-    # - Non-residential floor area >= 25,000 sq ft (25% of 100k sq ft)
-    # - Parking >= 125 spaces (25% of 500 vehicles)
-    # - Residential units >= 50 units (25% of 200 units)
-    
     overlay_25_pct_triggered = False
     overlay_reasons = []
 
@@ -200,10 +224,10 @@ if st.button("Run SEQRA Evaluation", type="primary"):
     if is_exceeding_25_pct:
         if involves_ag:
             overlay_25_pct_triggered = True
-            overlay_reasons.append("Project is within an enrolled agricultural district (non-ag use) and meets or exceeds 25% of a Type I threshold (617.4(b)(8)).")
+            overlay_reasons.append("Project has non-agricultural use within an enrolled agricultural district and meets or exceeds 25% of a Type I threshold (617.4(b)(8)).")
         if involves_historic:
             overlay_25_pct_triggered = True
-            overlay_reasons.append("Project is within/adjacent to a historic site/district and meets or exceeds 25% of a Type I threshold (617.4(b)(9)).")
+            overlay_reasons.append("Project is within/adjacent to a historic resource and meets or exceeds 25% of a Type I threshold (617.4(b)(9)).")
         if involves_parkland:
             overlay_25_pct_triggered = True
             overlay_reasons.append("Project is within/adjacent to public parkland and meets or exceeds 25% of a Type I threshold (617.4(b)(10)).")
@@ -215,33 +239,47 @@ if st.button("Run SEQRA Evaluation", type="primary"):
     # 5. Mixed-Use Guardrail
     mixed_use_triggered = non_res_sqft >= 4000
 
-    if mixed_use_triggered and not type2_ag_structure:
+    if mixed_use_triggered and not type2_ag_ops:
         reasons.append(f"Non-residential gross floor area ({non_res_sqft:,} sq. ft.) meets or exceeds the 4,000 sq. ft. mixed-use guardrail, disqualifying pure residential/accessory Type II exemptions.")
 
-    # 6. Type II Exemption Evaluation
-    type2_checked = any([type2_maint, type2_1to3_family, type2_variances, type2_ag_structure]) or (0 < non_res_sqft < 4000)
+    # 6. Comprehensive Type II Exemption Evaluation
+    type2_checked = any([
+        type2_maint_repair, type2_ag_ops, type2_infrastructure, type2_minor_nonres,
+        type2_edu_routine, type2_1to3_family, type2_solar_disturbed, type2_solar_roof,
+        type2_variances_reuse, type2_planning_admin
+    ]) or (0 < non_res_sqft < 4000)
 
     if type2_checked and not is_type_i and not involves_zoning_conflict:
-        if mixed_use_triggered and not type2_ag_structure:
+        if mixed_use_triggered and not type2_ag_ops:
             is_type_ii = False  # Blocked by mixed-use guardrail
         else:
             is_type_ii = True
-            if type2_maint:
-                reasons.append("Qualifies under 6 NYCRR 617.5(c)(1)/(2): Maintenance, repair, or replacement in-kind.")
-            if 0 < non_res_sqft < 4000:
-                reasons.append(f"Qualifies under 6 NYCRR 617.5(c)(9): Non-residential structure/expansion ({non_res_sqft:,} sq. ft.) is under the 4,000 sq. ft. threshold.")
+            if type2_maint_repair:
+                reasons.append("Qualifies under Type II 6 NYCRR 617.5(c)(1)-(2): Maintenance, in-kind replacement, or code/green infrastructure upgrades.")
+            if type2_ag_ops or (0 < non_res_sqft < 4000 and type2_ag_ops):
+                reasons.append("Qualifies under Type II 6 NYCRR 617.5(c)(3): Agricultural farm management practices and structures.")
+            if type2_infrastructure:
+                reasons.append("Qualifies under Type II 6 NYCRR 617.5(c)(4)-(7): Routine utility, highway, or telecommunication infrastructure maintenance.")
+            if type2_minor_nonres or (0 < non_res_sqft < 4000):
+                reasons.append(f"Qualifies under Type II 6 NYCRR 617.5(c)(9): Non-residential structure/expansion ({non_res_sqft:,} sq. ft.) is under 4,000 sq. ft.")
+            if type2_edu_routine:
+                reasons.append("Qualifies under Type II 6 NYCRR 617.5(c)(10): Routine educational institution activity or minor expansion under 10,000 sq. ft.")
             if type2_1to3_family:
-                reasons.append("Qualifies under 6 NYCRR 617.5(c)(11)/(12): Construction of 1 to 3-family residential structures.")
-            if type2_variances:
-                reasons.append("Qualifies under 6 NYCRR 617.5(c)(16)/(17): Granting of area or setback variances for single/two-family homes.")
-            if type2_ag_structure:
-                reasons.append("Qualifies under 6 NYCRR 617.5(c)(3): Agricultural farm structures and management practices.")
+                reasons.append("Qualifies under Type II 6 NYCRR 617.5(c)(11)-(13): Residential construction of 1-3 units, accessory structures, or utility extensions.")
+            if type2_solar_disturbed:
+                reasons.append("Qualifies under Type II 6 NYCRR 617.5(c)(14): Solar energy array (<= 25 acres) on a qualified disturbed/brownfield/industrial site.")
+            if type2_solar_roof:
+                reasons.append("Qualifies under Type II 6 NYCRR 617.5(c)(15): Rooftop solar energy installation on a non-historic structure.")
+            if type2_variances_reuse:
+                reasons.append("Qualifies under Type II 6 NYCRR 617.5(c)(16)-(18): Area/setback variances or compliant building/structure reuses.")
+            if type2_planning_admin:
+                reasons.append("Qualifies under Type II 6 NYCRR 617.5(c)(19)-(43): General planning, GML 239 referrals, ministerial permits, or routine agency administration.")
 
     # Determine Classification with Statutory Precedence (Type I > Type II > Unlisted)
     if is_type_i:
         classification = "Type I Action (Full EAF Required)"
         status_color = "error"
-        explanation = "The project triggers one or more Type I thresholds under 6 NYCRR 617.4 (including major project scale, agency policy acreage thresholds, or the 25% overlay rules). Statutory precedence dictates that Type I classifications override potential Type II exemptions. Type I actions require the submission of a Full Environmental Assessment Form (Full EAF)."
+        explanation = "The project triggers one or more Type I thresholds under 6 NYCRR 617.4 (including major project scale, agency policy thresholds, or the 25% overlay rules). Statutory precedence dictates that Type I classifications override potential Type II exemptions. Type I actions require the submission of a Full Environmental Assessment Form (Full EAF)."
     elif is_type_ii:
         classification = "Type II Action (Exempt from Review)"
         status_color = "success"

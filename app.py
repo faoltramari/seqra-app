@@ -45,11 +45,6 @@ type2_maint = st.checkbox(
     help="Includes replacing roof, repaving existing parking lots without expansion, or utility line repairs."
 )
 
-type2_accessory = st.checkbox(
-    "Construction/expansion of primary or accessory non-residential structures (< 4,000 sq. ft.)",
-    help="Applies to small garages, barns, sheds, or minor commercial additions under 4,000 sq. ft."
-)
-
 type2_1to3_family = st.checkbox(
     "Construction of 1, 2, or 3-family residential structure(s) on an approved lot",
     help="Standard single-family, duplex, or triplex residential construction."
@@ -139,18 +134,17 @@ if st.button("Run SEQRA Evaluation", type="primary"):
         reasons.append("Project is adjacent to public parkland and exceeds the 1-acre overlay review threshold.")
 
     # 4. Type II Exemption Evaluation
-    # Actions explicitly listed under 617.5(c) are Type II UNLESS overridden by Type I thresholds or zoning inconsistencies
-    type2_checked = any([type2_maint, type2_accessory, type2_1to3_family, type2_variances, type2_ag_structure])
+    type2_checked = any([type2_maint, type2_1to3_family, type2_variances, type2_ag_structure]) or (0 < non_res_sqft < 4000)
 
-    if type2_checked and not is_type_i and not involves_zoning_conflict:
-        if type2_accessory and mixed_use_triggered and not type2_ag_structure:
+    if type2_checked and not is_type_i and not involves_zoning_conflict and not has_overlay_trigger:
+        if mixed_use_triggered and not type2_ag_structure:
             is_type_ii = False  # Blocked by mixed-use guardrail
         else:
             is_type_ii = True
             if type2_maint:
                 reasons.append("Qualifies under 6 NYCRR 617.5(c)(1)/(2): Maintenance, repair, or replacement in-kind.")
-            if type2_accessory and non_res_sqft < 4000:
-                reasons.append("Qualifies under 6 NYCRR 617.5(c)(9): Accessory non-residential structure under 4,000 sq. ft.")
+            if 0 < non_res_sqft < 4000:
+                reasons.append(f"Qualifies under 6 NYCRR 617.5(c)(9): Non-residential structure/expansion ({non_res_sqft} sq. ft.) is under the 4,000 sq. ft. threshold.")
             if type2_1to3_family:
                 reasons.append("Qualifies under 6 NYCRR 617.5(c)(11)/(12): Construction of 1 to 3-family residential structures.")
             if type2_variances:

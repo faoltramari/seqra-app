@@ -37,6 +37,11 @@ num_residential_units = st.number_input(
     help="Total number of new dwelling units proposed (e.g., single-family homes, apartments, or townhome units)."
 )
 
+unsewered_water_sewer = st.checkbox(
+    "Residential units will NOT connect to existing public/community water and sewer systems at habitation",
+    help="Triggers Type I review at 50 or more residential units under 6 NYCRR 617.4(b)(5)(ii)."
+)
+
 parking_spaces = st.number_input(
     "Number of parking spaces proposed",
     min_value=0,
@@ -51,7 +56,25 @@ water_gpd = st.number_input(
     help="Projected daily ground or surface water withdrawal or consumption."
 )
 
-st.subheader("2. Specific Type II Statutory Exemption Categories")
+st.subheader("2. Agency, Policy & Zoning Actions")
+st.caption("💡 *Note: Select any agency-sponsored policy action or zoning amendment that applies.*")
+
+type1_comp_plan = st.checkbox(
+    "Adoption of a municipal land use plan, comprehensive resource management plan, or initial zoning regulations",
+    help="Type I Action under 6 NYCRR 617.4(b)(1)."
+)
+
+type1_zoning_25acres = st.checkbox(
+    "Adoption of changes in allowable uses within a zoning district affecting 25 or more acres",
+    help="Type I Action under 6 NYCRR 617.4(b)(2)."
+)
+
+type1_land_transfer_100acres = st.checkbox(
+    "Acquisition, sale, lease, annexation, or transfer of 100 or more contiguous acres by a public agency",
+    help="Type I Action under 6 NYCRR 617.4(b)(4)."
+)
+
+st.subheader("3. Specific Type II Statutory Exemption Categories")
 st.caption("💡 *Note: Check any box that explicitly describes your proposed action under 6 NYCRR 617.5(c).*")
 
 type2_maint = st.checkbox(
@@ -74,7 +97,7 @@ type2_ag_structure = st.checkbox(
     help="Includes barns, silos, manure storage facilities, and standard agricultural practices."
 )
 
-st.subheader("3. Project Characteristics & Environmental Overlays")
+st.subheader("4. Project Characteristics & Environmental Overlays")
 st.caption("💡 *Note: Check the box for any statement that applies to your project (Checked = Yes).*")
 
 involves_historic = st.checkbox(
@@ -108,18 +131,35 @@ with st.expander("ℹ️ What does 'inconsistency with local land use controls' 
 st.divider()
 
 # --- EVALUATION LOGIC ---
-st.subheader("4. Environmental Review Determination")
+st.subheader("5. Environmental Review Determination")
 
 if st.button("Run SEQRA Evaluation", type="primary"):
     is_type_i = False
     is_type_ii = False
     reasons = []
 
-    # 1. Full Type I Threshold Checks (6 NYCRR 617.4) - Tailored for Municipalities < 150k population
-    if num_residential_units >= 200:
+    # 1. Policy & Agency Type I Triggers (6 NYCRR 617.4(b)(1), (2), (4))
+    if type1_comp_plan:
         is_type_i = True
-        reasons.append(f"Residential unit count ({num_residential_units}) meets or exceeds the Type I threshold of 200 units for municipalities under 150,000 population.")
+        reasons.append("Adoption of a municipal land use plan, comprehensive management plan, or initial zoning code is a Type I action under 617.4(b)(1).")
 
+    if type1_zoning_25acres:
+        is_type_i = True
+        reasons.append("Zoning map or text amendment altering allowable uses across 25+ acres is a Type I action under 617.4(b)(2).")
+
+    if type1_land_transfer_100acres:
+        is_type_i = True
+        reasons.append("Public agency land transfer/annexation involving 100+ contiguous acres is a Type I action under 617.4(b)(4).")
+
+    # 2. Residential Threshold Checks (6 NYCRR 617.4(b)(5))
+    if unsewered_water_sewer and num_residential_units >= 50:
+        is_type_i = True
+        reasons.append(f"Unsewered residential development ({num_residential_units} units) meets or exceeds the Type I threshold of 50 units under 617.4(b)(5)(ii).")
+    elif not unsewered_water_sewer and num_residential_units >= 200:
+        is_type_i = True
+        reasons.append(f"Sewered residential unit count ({num_residential_units}) meets or exceeds the Type I threshold of 200 units for municipalities under 150,000 population under 617.4(b)(5)(iii).")
+
+    # 3. Commercial & Physical Scale Type I Triggers (6 NYCRR 617.4(b)(6))
     if disturbance_acres >= 10.0:
         is_type_i = True
         reasons.append(f"Physical disturbance ({disturbance_acres} acres) meets or exceeds the Type I threshold of 10 acres.")
@@ -136,30 +176,34 @@ if st.button("Run SEQRA Evaluation", type="primary"):
         is_type_i = True
         reasons.append(f"Non-residential gross floor area ({non_res_sqft:,} sq. ft.) meets or exceeds the Type I threshold of 100,000 sq. ft. for municipalities under 150,000 population.")
 
-    # 2. Mixed-Use Guardrail
+    # 4. Requested Zoning Changes Triggering Type I (6 NYCRR 617.4(b)(3))
+    if involves_zoning_conflict and is_type_i:
+        reasons.append("Applicant-requested zoning change associated with an action exceeding Type I thresholds (617.4(b)(3)).")
+
+    # 5. Mixed-Use Guardrail
     mixed_use_triggered = non_res_sqft >= 4000
 
     if mixed_use_triggered and not type2_ag_structure:
         reasons.append(f"Non-residential gross floor area ({non_res_sqft:,} sq. ft.) meets or exceeds the 4,000 sq. ft. mixed-use guardrail, disqualifying pure residential/accessory Type II exemptions.")
 
-    # 3. Overlay / 25% Threshold Checks (Items 8, 9, 10)
+    # 6. Overlay / 25% Threshold Checks (Items 8, 9, 10)
     has_overlay_trigger = False
     if involves_ag and disturbance_acres >= 2.5:
         has_overlay_trigger = True
         is_type_i = True
-        reasons.append("Project has non-agricultural use within an enrolled agricultural district and exceeds 25% of the 10-acre physical disturbance threshold (2.5+ acres), triggering Type I classification under 617.4(a)(8).")
+        reasons.append("Project has non-agricultural use within an enrolled agricultural district and exceeds 25% of the 10-acre physical disturbance threshold (2.5+ acres), triggering Type I classification under 617.4(b)(8).")
 
     if involves_historic and disturbance_acres >= 2.5:
         has_overlay_trigger = True
         is_type_i = True
-        reasons.append("Project is adjacent to a historic resource and exceeds 25% of the 10-acre physical disturbance threshold (2.5+ acres), triggering Type I classification under 617.4(a)(9).")
+        reasons.append("Project is adjacent to a historic resource and exceeds 25% of the 10-acre physical disturbance threshold (2.5+ acres), triggering Type I classification under 617.4(b)(9).")
 
     if involves_parkland and disturbance_acres >= 2.5:
         has_overlay_trigger = True
         is_type_i = True
-        reasons.append("Project is adjacent to public parkland and exceeds 25% of the 10-acre physical disturbance threshold (2.5+ acres), triggering Type I classification under 617.4(a)(10).")
+        reasons.append("Project is adjacent to public parkland and exceeds 25% of the 10-acre physical disturbance threshold (2.5+ acres), triggering Type I classification under 617.4(b)(10).")
 
-    # 4. Type II Exemption Evaluation
+    # 7. Type II Exemption Evaluation
     type2_checked = any([type2_maint, type2_1to3_family, type2_variances, type2_ag_structure]) or (0 < non_res_sqft < 4000)
 
     if type2_checked and not is_type_i and not involves_zoning_conflict and not has_overlay_trigger:
@@ -182,7 +226,7 @@ if st.button("Run SEQRA Evaluation", type="primary"):
     if is_type_i:
         classification = "Type I Action (Full EAF Required)"
         status_color = "error"
-        explanation = "The project triggers one or more Type I thresholds under 6 NYCRR 617.4 (including major project scale or 25% overlay rules). Statutory precedence dictates that Type I classifications override potential Type II exemptions. Type I actions require the submission of a Full Environmental Assessment Form (Full EAF)."
+        explanation = "The project triggers one or more Type I thresholds under 6 NYCRR 617.4 (including major project scale, agency policy actions, or 25% overlay rules). Statutory precedence dictates that Type I classifications override potential Type II exemptions. Type I actions require the submission of a Full Environmental Assessment Form (Full EAF)."
     elif is_type_ii:
         classification = "Type II Action (Exempt from Review)"
         status_color = "success"

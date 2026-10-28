@@ -194,7 +194,7 @@ if st.button("Run SEQRA Evaluation", type="primary"):
 
     if parking_spaces >= 500:
         is_type_i = True
-        reasons.append(f"Proposed parking spaces ({parking_spaces}) meet or exceed the Type I threshold of 500 vehicles for municipalities under 150,000 population.")
+        reasons.append(f"Proposed parking spaces ({parking_spaces}) meet or exceeds the Type I threshold of 500 vehicles for municipalities under 150,000 population.")
 
     if non_res_sqft >= 100000:
         is_type_i = True
@@ -226,11 +226,11 @@ if st.button("Run SEQRA Evaluation", type="primary"):
         is_type_i = True
         reasons.extend(overlay_reasons)
 
-    # 5. Mixed-Use Guardrail
+    # 5. Mixed-Use Guardrail / Scale Check
     mixed_use_triggered = non_res_sqft >= 4000
 
     if mixed_use_triggered and not type2_ag_ops:
-        reasons.append(f"Non-residential gross floor area ({non_res_sqft:,} sq. ft.) meets or exceeds the 4,000 sq. ft. mixed-use guardrail, disqualifying pure residential/accessory Type II exemptions.")
+        reasons.append(f"Non-residential gross floor area ({non_res_sqft:,} sq. ft.) meets or exceeds the 4,000 sq. ft. threshold, disqualifying minor accessory Type II exemptions.")
 
     # 6. Comprehensive Type II Exemption Evaluation
     type2_checked = any([
@@ -239,13 +239,15 @@ if st.button("Run SEQRA Evaluation", type="primary"):
     ]) or (0 < non_res_sqft < 4000)
 
     if type2_checked and not is_type_i and not involves_zoning_conflict:
+        # STRICT OVERRIDE: If non-residential footprint is 4,000+ sq ft, block Type II unless it's a pure agricultural operation
         if mixed_use_triggered and not type2_ag_ops:
-            is_type_ii = False  # Blocked by mixed-use guardrail
+            is_type_ii = False
+            reasons.append("Type II exemptions are overridden because non-residential gross floor area is 4,000 sq. ft. or greater.")
         else:
             is_type_ii = True
             if type2_maint_repair:
                 reasons.append("Qualifies under Type II: Maintenance, in-kind replacement, or code/green infrastructure upgrades.")
-            if type2_ag_ops or (0 < non_res_sqft < 4000 and type2_ag_ops):
+            if type2_ag_ops:
                 reasons.append("Qualifies under Type II: Agricultural farm management practices and structures.")
             if 0 < non_res_sqft < 4000:
                 reasons.append(f"Qualifies under Type II: Non-residential structure/expansion ({non_res_sqft:,} sq. ft.) is under 4,000 sq. ft.")
@@ -272,9 +274,9 @@ if st.button("Run SEQRA Evaluation", type="primary"):
         status_color = "success"
         explanation = "The project falls under statutory Type II exemption categories (6 NYCRR 617.5) with no significant adverse environmental impacts anticipated. No further review under SEQRA is required."
     elif mixed_use_triggered:
-        classification = "Unlisted Action (Subject to Mixed-Use Guardrail)"
+        classification = "Unlisted Action (Subject to Scale Guardrail)"
         status_color = "warning"
-        explanation = "Due to non-residential square footage meeting or exceeding statutory thresholds, standard residential exemptions do not apply. Prepare either a Short EAF or Full EAF for lead agency review."
+        explanation = "Due to non-residential square footage meeting or exceeding 4,000 sq. ft., standard minor exemptions do not apply. Prepare either a Short EAF or Full EAF for lead agency review."
     else:
         classification = "Unlisted Action"
         status_color = "info"

@@ -226,24 +226,23 @@ if st.button("Run SEQRA Evaluation", type="primary"):
         is_type_i = True
         reasons.extend(overlay_reasons)
 
-    # 5. Mixed-Use Guardrail / Scale Check
+    # 5. Mixed-Use / Scale Guardrail Check
     mixed_use_triggered = non_res_sqft >= 4000
 
     if mixed_use_triggered and not type2_ag_ops:
-        reasons.append(f"Non-residential gross floor area ({non_res_sqft:,} sq. ft.) meets or exceeds the 4,000 sq. ft. threshold, disqualifying minor accessory Type II exemptions.")
+        reasons.append(f"Non-residential gross floor area ({non_res_sqft:,} sq. ft.) meets or exceeds the 4,000 sq. ft. threshold.")
 
-    # 6. Comprehensive Type II Exemption Evaluation
-    type2_checked = any([
-        type2_maint_repair, type2_ag_ops, type2_1to3_family, type2_solar_disturbed,
-        type2_solar_roof, type2_setback_adjustments, type2_res_area_variance, type2_structure_reuse
-    ]) or (0 < non_res_sqft < 4000)
+    # 6. Comprehensive Type II Exemption Evaluation with Strict Guardrail
+    if mixed_use_triggered and not type2_ag_ops:
+        is_type_ii = False
+        reasons.append("Type II exemptions are disqualified because non-residential gross floor area meets or exceeds 4,000 sq. ft.")
+    else:
+        type2_checked = any([
+            type2_maint_repair, type2_ag_ops, type2_1to3_family, type2_solar_disturbed,
+            type2_solar_roof, type2_setback_adjustments, type2_res_area_variance, type2_structure_reuse
+        ]) or (0 < non_res_sqft < 4000)
 
-    if type2_checked and not is_type_i and not involves_zoning_conflict:
-        # STRICT OVERRIDE: If non-residential footprint is 4,000+ sq ft, block Type II unless it's a pure agricultural operation
-        if mixed_use_triggered and not type2_ag_ops:
-            is_type_ii = False
-            reasons.append("Type II exemptions are overridden because non-residential gross floor area is 4,000 sq. ft. or greater.")
-        else:
+        if type2_checked and not is_type_i and not involves_zoning_conflict:
             is_type_ii = True
             if type2_maint_repair:
                 reasons.append("Qualifies under Type II: Maintenance, in-kind replacement, or code/green infrastructure upgrades.")

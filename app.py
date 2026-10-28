@@ -34,7 +34,7 @@ st.subheader("2. Project Characteristics & Overlays")
 st.caption("💡 *Note: Check the box for any statement that applies to your project (Checked = Yes).*")
 
 involves_historic = st.checkbox("Contagious or adjacent to a historic site or district")
-involves_ag = st.checkbox("Located within a Certified Agricultural District")
+involves_ag = st.checkbox("Parcel is enrolled in the NYS Agricultural District Program")
 involves_parkland = st.checkbox("Contagious to public parkland or recreation area")
 
 involves_zoning_conflict = st.checkbox(
@@ -47,7 +47,7 @@ with st.expander("ℹ️ What does 'inconsistency with local land use controls' 
     adopted comprehensive plan, official zoning map, or local land use laws. 
     
     * **Example:** Proposing a heavy commercial or industrial facility inside a strictly low-density 
-      residential neighborhood where that use is not permitted by right or special exception.
+      residential neighborhood where that use is not permitted by right or special use permit.
     """)
 
 st.divider()
@@ -73,17 +73,17 @@ if st.button("Run SEQRA Evaluation", type="primary"):
 
     # Determine Classification with Precedence (Type I overrides Type II)
     if is_type_i:
-        classification = "Type I Action"
+        classification = "Type I Action (Full EAF Required)"
         status_color = "error"
-        explanation = "The project triggers one or more Type I thresholds under 6 NYCRR 617.4. Statutory precedence dictates that Type I classifications override potential Type II exemptions."
+        explanation = "The project triggers one or more Type I thresholds under 6 NYCRR 617.4. Statutory precedence dictates that Type I classifications override potential Type II exemptions. Type I actions require the submission of a Full Environmental Assessment Form (Full EAF)."
     elif mixed_use_triggered and not is_type_i:
         classification = "Unlisted Action (Subject to Mixed-Use Guardrail)"
         status_color = "warning"
-        explanation = "Due to the non-residential square footage exceeding statutory thresholds, standard residential exemptions do not apply. A full environmental assessment form (EAF) is typically required."
+        explanation = "Due to the non-residential square footage exceeding statutory thresholds, standard residential exemptions do not apply. Depending on project scale, prepare either a Short EAF or Full EAF for lead agency review."
     else:
         classification = "Unlisted / Potential Type II Review"
         status_color = "info"
-        explanation = "Preliminary screening completed. Review individual overlay thresholds and local planning board guidelines to confirm final status."
+        explanation = "Preliminary screening completed. Review individual overlay thresholds and local planning board guidelines. For unlisted actions, complete the Short Environmental Assessment Form (Short EAF)."
 
     # Display Results
     if status_color == "error":
@@ -99,6 +99,11 @@ if st.button("Run SEQRA Evaluation", type="primary"):
         st.markdown("**Trigger Factors Identified:**")
         for r in reasons:
             st.markdown(f"- {r}")
+
+    # EAF Mapper Reference Link
+    st.markdown("---")
+    st.markdown("📋 **Next Steps & Documentation:**")
+    st.markdown("To prepare your filing documents, use the official [NYS DEC EAF Mapper](https://gisservices.dec.ny.gov/eafmapper/) to generate spatial boundary data, verify agricultural district enrollment, and complete your Short or Full EAF forms.")
 
 else:
     st.info("Click 'Run SEQRA Evaluation' above to calculate the preliminary environmental classification.")

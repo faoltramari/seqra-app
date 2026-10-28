@@ -298,10 +298,11 @@ if st.button("Run SEQRA Evaluation", type="primary"):
         for r in reasons:
             st.markdown(f"- {r}")
 
-    # EAF Mapper Reference Link
-    st.markdown("---")
-    st.markdown("📋 **Next Steps & Documentation:**")
-    st.markdown("To prepare your filing documents, use the official [NYS DEC EAF Mapper](https://gisservices.dec.ny.gov/eafmapper/) to generate spatial boundary data, verify agricultural district enrollment, and complete your Short or Full EAF forms.")
+    # EAF Mapper Reference Link (Only shown if NOT Type II)
+    if not is_type_ii:
+        st.markdown("---")
+        st.markdown("📋 **Next Steps & Documentation:**")
+        st.markdown("To prepare your filing documents, use the official [NYS DEC EAF Mapper](https://gisservices.dec.ny.gov/eafmapper/) to generate spatial boundary data, verify agricultural district enrollment, and complete your Short or Full EAF forms.")
 
 else:
     st.info("Click 'Run SEQRA Evaluation' above to calculate the preliminary environmental classification.")

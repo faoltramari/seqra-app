@@ -125,7 +125,7 @@ st.subheader("4. Project Characteristics & Environmental Overlays")
 st.caption("💡 *Note: Check the box for any statement that applies to your project (Checked = Yes).*")
 
 involves_historic = st.checkbox(
-    "Contagious or adjacent to a historic site or district",
+    "Contiguous or adjacent to a historic site or district",
     help="Includes properties listed on or eligible for the State or National Register of Historic Places, or located within a designated local, state, or federal historic district."
 )
 
@@ -135,7 +135,7 @@ involves_ag = st.checkbox(
 )
 
 involves_parkland = st.checkbox(
-    "Contagious to public parkland or recreation area",
+    "Contiguous to public parkland or recreation area",
     help="Includes properties that share a common boundary with or are directly adjacent to publicly owned parkland, forest preserves, or active recreation facilities."
 )
 
